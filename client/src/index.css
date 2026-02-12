@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #030712; /* Gray 950 - Darker, richer black */
+  --foreground: #F9FAFB; /* Gray 50 */
+  
+  --card: #111827; /* Gray 900 */
+  --card-foreground: #F9FAFB;
+
+  --popover: #111827;
+  --popover-foreground: #F9FAFB;
+
+  --primary: #8B5CF6; /* Violet 500 - More energetic than Emerald */
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #1F2937; /* Gray 800 */
+  --secondary-foreground: #F9FAFB;
+
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF; /* Gray 400 */
+
+  --accent: #06B6D4; /* Cyan 500 - Electric accent */
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #374151; /* Gray 700 */
+  --input: #374151;
+  --ring: #8B5CF6;
+
+  --radius: 1rem; /* Rounder corners */
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-radius: var(--radius);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Outfit', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.08), transparent 25%), 
+    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.08), transparent 25%);
+}

@@ -1,0 +1,25 @@
+{
+  "name": "habitica-ai-server",
+  "version": "1.0.0",
+  "description": "LangChain AI agent server for Habitica",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.0.20",
+    "@langchain/core": "^0.1.10",
+    "@tavily/core": "^0.7.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "groq-sdk": "^0.37.0",
+    "langchain": "^0.1.10",
+    "openai": "^4.24.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
