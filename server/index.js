@@ -20,7 +20,9 @@ app.use(express.json());
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'AI Agent server is running' });
 });
-
+app.get("/", (req, res) => {
+    res.send("AI Agent server is running")
+})
 // Generate plan endpoint
 app.post('/api/generate-plan', async (req, res) => {
     try {
