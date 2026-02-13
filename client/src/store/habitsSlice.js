@@ -148,7 +148,7 @@ const habitsSlice = createSlice({
                 if (!state.history[date]) state.history[date] = [];
 
                 if (type === 'removed') {
-                    state.history[date] = state.history[date].filter(id => id !== habitId);
+                    state.history[date] = state.history[date].filter(id => String(id) !== String(habitId));
                 } else {
                     state.history[date].push(habitId);
                 }

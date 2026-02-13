@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Modal } from '../components/ui/modal';
-import { CheckCircle2, Circle, Flame, TrendingUp, Plus, Trash2, ChevronLeft, ChevronRight, Sparkles, Calendar as CalendarIcon, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Circle, Flame, TrendingUp, Plus, Trash2, ChevronLeft, ChevronRight, Sparkles, Calendar as CalendarIcon, BarChart3, Square, CheckSquare, SquareX } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,7 +65,7 @@ export default function Dashboard() {
     };
 
     const toggleHabit = (habitId) => {
-        dispatch(toggleHabitCompletion({ habitId, date: today }));
+        dispatch(toggleHabitCompletion({ habitId: String(habitId), date: today }));
     };
 
     const completionRate = habits.length > 0 ? Math.round((todaysCompleted.length / habits.length) * 100) : 0;
@@ -178,9 +178,23 @@ export default function Dashboard() {
 
     const weeklyConsistency = calculateWeeklyConsistency();
 
+    const renderHabitName = (name) => {
+        if (name.includes(':')) {
+            const [time, ...rest] = name.split(':');
+            const activity = rest.join(':').trim();
+            return (
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">{time.trim()}</span>
+                    <span className="text-sm font-semibold truncate text-foreground/90">{activity}</span>
+                </div>
+            );
+        }
+        return <span className="text-sm font-semibold truncate text-foreground/90">{name}</span>;
+    };
+
 
     const getHabitStatus = (habitId, dateStr, isPast, isToday) => {
-        const isCompleted = history[dateStr]?.includes(habitId);
+        const isCompleted = history[dateStr]?.some(id => String(id) === String(habitId));
 
         // If it's a future date, show nothing
         if (!isPast && !isToday) return null;
@@ -188,14 +202,17 @@ export default function Dashboard() {
         // If completed, show green check
         if (isCompleted) return 'completed';
 
-        // If it's past or today and not completed, show red X
-        if (isPast || isToday) return 'missed';
+        // If it's today and not completed, show pending
+        if (isToday) return 'pending';
+
+        // If it's past and not completed, show red X
+        if (isPast) return 'missed';
 
         return null;
     };
 
     const toggleWeeklyHabit = (habitId, dateStr) => {
-        dispatch(toggleHabitCompletion({ habitId, date: dateStr }));
+        dispatch(toggleHabitCompletion({ habitId: String(habitId), date: dateStr }));
     };
 
     return (
@@ -267,8 +284,8 @@ export default function Dashboard() {
                                 <div className="overflow-x-auto">
                                     <div className="min-w-full">
                                         {/* Header Row */}
-                                        <div className="grid grid-cols-8 gap-2 mb-3">
-                                            <div className="font-semibold text-sm text-muted-foreground px-3 py-2">
+                                        <div className="grid grid-cols-11 gap-2 mb-3">
+                                            <div className="col-span-4 font-semibold text-sm text-muted-foreground px-3 py-2">
                                                 Daily Habits
                                             </div>
                                             {weekDates.map((day) => (
@@ -290,18 +307,18 @@ export default function Dashboard() {
                                             {habits.map((habit) => (
                                                 <div
                                                     key={habit.id}
-                                                    className="grid grid-cols-8 gap-2 items-center py-2 px-1 rounded-lg hover:bg-secondary/20 transition-colors group"
+                                                    className="grid grid-cols-11 gap-2 items-center py-3 px-2 rounded-xl hover:bg-secondary/20 transition-all group"
                                                 >
-                                                    {/* Habit Name */}
-                                                    <div className="px-2 flex items-center justify-between">
-                                                        <span className="text-sm font-medium truncate">{habit.name}</span>
+                                                    {/* Habit Name & Time */}
+                                                    <div className="col-span-4 px-2 flex items-center justify-between min-w-0">
+                                                        {renderHabitName(habit.name)}
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80 h-6 w-6"
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80 h-7 w-7 shrink-0 ml-2"
                                                             onClick={() => dispatch(deleteHabit(habit.id))}
                                                         >
-                                                            <Trash2 size={12} />
+                                                            <Trash2 size={14} />
                                                         </Button>
                                                     </div>
 
@@ -319,12 +336,14 @@ export default function Dashboard() {
                                                                     className={cn(
                                                                         "text-xl transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed",
                                                                         status === 'completed' && "hover:opacity-80",
-                                                                        status === 'missed' && "hover:opacity-80"
+                                                                        status === 'missed' && "hover:opacity-80",
+                                                                        status === 'pending' && "hover:opacity-80"
                                                                     )}
                                                                 >
-                                                                    {status === 'completed' && '✅'}
-                                                                    {status === 'missed' && '❌'}
-                                                                    {!status && '⚪'}
+                                                                    {status === 'completed' && <CheckSquare className="text-emerald-500 fill-emerald-500/20" size={20} />}
+                                                                    {status === 'missed' && <SquareX className="text-destructive opacity-50" size={20} />}
+                                                                    {status === 'pending' && <Square className="text-muted-foreground hover:text-primary transition-colors" size={20} />}
+                                                                    {!status && <Square className="text-transparent" size={20} />}
                                                                 </button>
                                                             </div>
                                                         );

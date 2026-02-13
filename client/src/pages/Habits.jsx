@@ -4,7 +4,7 @@ import { addHabit, toggleHabitCompletion, deleteHabit, fetchHabits, fetchHabitLo
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent } from '../components/ui/card';
-import { CheckCircle2, Plus, Trash2, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2, X, Loader2, Square, CheckSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,8 +24,8 @@ export default function Habits() {
     }, [dispatch, user, habits.length]);
 
     const handleToggle = (id) => {
-        const today = new Date().toISOString().split('T')[0];
-        dispatch(toggleHabitCompletion({ habitId: id, date: today }));
+        const today = new Date().toLocaleDateString('en-CA');
+        dispatch(toggleHabitCompletion({ habitId: String(id), date: today }));
     };
 
     const handleAdd = async (e) => {
@@ -50,8 +50,8 @@ export default function Habits() {
 
     // Helper to check completion for today
     const isCompletedToday = (habitId) => {
-        const today = new Date().toISOString().split('T')[0];
-        return history[today]?.includes(habitId);
+        const today = new Date().toLocaleDateString('en-CA');
+        return history[today]?.some(id => String(id) === String(habitId));
     };
 
     // Calculate generic streak (mock logic for now, or based on history)
@@ -115,11 +115,11 @@ export default function Habits() {
                                         <button
                                             onClick={() => handleToggle(habit.id)}
                                             className={cn(
-                                                "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300",
-                                                completed ? "bg-emerald-500 border-emerald-500" : "border-muted-foreground hover:border-emerald-500/50"
+                                                "w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all duration-300",
+                                                completed ? "bg-emerald-500/10 border-emerald-500 text-emerald-500" : "border-muted-foreground hover:border-emerald-500/50"
                                             )}
                                         >
-                                            {completed && <CheckCircle2 size={18} className="text-white" />}
+                                            {completed ? <CheckSquare size={18} fill="currentColor" fillOpacity={0.2} /> : <Square size={18} />}
                                         </button>
 
                                         <div>

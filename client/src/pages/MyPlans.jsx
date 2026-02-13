@@ -11,7 +11,7 @@ import {
     Plus, Trash2, ChevronLeft, ChevronRight,
     Sparkles, Layout, Calendar as CalendarIcon,
     BarChart3, Flame, CheckCircle2, TrendingUp, Circle,
-    ArrowLeft
+    ArrowLeft, Square, CheckSquare, SquareX
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
@@ -43,6 +43,7 @@ export default function MyPlans() {
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
     const [newHabitName, setNewHabitName] = useState("");
+    const [newHabitTime, setNewHabitTime] = useState("");
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const today = new Date().toLocaleDateString('en-CA');
@@ -62,8 +63,10 @@ export default function MyPlans() {
         e.preventDefault();
         if (!newHabitName.trim() || !selectedPlan) return;
 
+        const fullName = newHabitTime.trim() ? `${newHabitTime.trim()}: ${newHabitName.trim()}` : newHabitName.trim();
+
         const newHabit = {
-            name: newHabitName,
+            name: fullName,
             frequency: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             color: 'bg-primary',
             plan_id: selectedPlan.id
@@ -72,6 +75,7 @@ export default function MyPlans() {
         try {
             await dispatch(addHabit(newHabit)).unwrap();
             setNewHabitName("");
+            setNewHabitTime("");
             setIsHabitModalOpen(false);
         } catch (error) {
             console.error("Failed to add habit:", error);
@@ -88,7 +92,7 @@ export default function MyPlans() {
 
     // --- Dashboard Logic (Mirrored from Dashboard.jsx) ---
     const todaysCompleted = history[today] || [];
-    const completionRate = habits.length > 0 ? Math.round((todaysCompleted.filter(id => habits.some(h => h.id === id)).length / habits.length) * 100) : 0;
+    const completionRate = habits.length > 0 ? Math.round((todaysCompleted.filter(id => habits.some(h => String(h.id) === String(id))).length / habits.length) * 100) : 0;
 
     const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
     const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
@@ -124,7 +128,7 @@ export default function MyPlans() {
 
     const calculateWeeklyData = () => {
         return weekDates.map(day => {
-            const completedCount = history[day.date]?.filter(id => habits.some(h => h.id === id)).length || 0;
+            const completedCount = history[day.date]?.filter(id => habits.some(h => String(h.id) === String(id))).length || 0;
             const completionRate = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
             return { day: day.dayName, completion: completionRate };
         });
@@ -134,7 +138,7 @@ export default function MyPlans() {
         let streak = 0;
         const sortedDates = Object.keys(history).sort().reverse();
         for (const date of sortedDates) {
-            const completedHabits = history[date]?.filter(id => habits.some(h => h.id === id)).length || 0;
+            const completedHabits = history[date]?.filter(id => habits.some(h => String(h.id) === String(id))).length || 0;
             if (completedHabits > 0) streak++; else break;
         }
         return streak;
@@ -145,16 +149,31 @@ export default function MyPlans() {
         if (pastDays.length === 0) return 0;
         let totalCompletion = 0;
         pastDays.forEach(day => {
-            const completedCount = history[day.date]?.filter(id => habits.some(h => h.id === id)).length || 0;
+            const completedCount = history[day.date]?.filter(id => habits.some(h => String(h.id) === String(id))).length || 0;
             if (habits.length > 0) totalCompletion += (completedCount / habits.length) * 100;
         });
         return Math.round(totalCompletion / pastDays.length);
     };
 
+    const renderHabitName = (name) => {
+        if (name.includes(':')) {
+            const [time, ...rest] = name.split(':');
+            const activity = rest.join(':').trim();
+            return (
+                <div className="flex flex-col min-w-0 px-2 text-left">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">{time.trim()}</span>
+                    <span className="text-sm font-semibold truncate text-foreground/90">{activity}</span>
+                </div>
+            );
+        }
+        return <div className="px-2 truncate text-sm font-semibold text-left">{name}</div>;
+    };
+
     const getHabitStatus = (habitId, dateStr, isPast, isToday) => {
-        const isCompleted = history[dateStr]?.includes(habitId);
+        const isCompleted = history[dateStr]?.some(id => String(id) === String(habitId));
         if (!isPast && !isToday) return null;
         if (isCompleted) return 'completed';
+        if (isToday) return 'pending';
         return 'missed';
     };
 
@@ -294,29 +313,34 @@ export default function MyPlans() {
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
-                                <div className="grid grid-cols-8 gap-2 mb-4 border-b border-border/50 pb-4">
-                                    <div className="text-sm font-bold opacity-50 px-2">Habits</div>
+                                <div className="grid grid-cols-11 gap-2 mb-4 border-b border-border/50 pb-4 sticky top-0 bg-card z-10 p-2">
+                                    <div className="col-span-4 text-xs font-bold opacity-50 px-2 flex items-center">Activity & Time</div>
                                     {weekDates.map(d => (
-                                        <div key={d.date} className={cn("text-center p-2 rounded-xl", d.isToday && "bg-primary/10 border border-primary/20")}>
-                                            <div className="text-xs font-bold text-primary">{d.dayName}</div>
-                                            <div className="text-[10px] opacity-70">{d.dayNumber}</div>
+                                        <div key={d.date} className={cn("text-center p-2 rounded-xl flex flex-col items-center justify-center transition-colors", d.isToday && "bg-primary/10 border border-primary/20")}>
+                                            <div className="text-[10px] font-bold text-primary uppercase">{d.dayName}</div>
+                                            <div className="text-xs opacity-70 font-medium">{d.dayNumber}</div>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="space-y-3">
                                     {habits.map(habit => (
-                                        <div key={habit.id} className="grid grid-cols-8 gap-2 items-center group">
-                                            <div className="px-2 truncate text-sm font-semibold">{habit.name}</div>
+                                        <div key={habit.id} className="grid grid-cols-11 gap-2 items-center py-3 px-2 rounded-xl hover:bg-secondary/20 transition-all group">
+                                            <div className="col-span-4 min-w-0">
+                                                {renderHabitName(habit.name)}
+                                            </div>
                                             {weekDates.map(day => {
                                                 const status = getHabitStatus(habit.id, day.date, day.isPast, day.isToday);
                                                 return (
                                                     <button
                                                         key={day.date}
                                                         disabled={!day.isPast && !day.isToday}
-                                                        onClick={() => dispatch(toggleHabitCompletion({ habitId: habit.id, date: day.date }))}
+                                                        onClick={() => dispatch(toggleHabitCompletion({ habitId: String(habit.id), date: day.date }))}
                                                         className="flex justify-center text-xl hover:scale-125 transition-transform disabled:opacity-20"
                                                     >
-                                                        {status === 'completed' ? '✅' : status === 'missed' ? '❌' : '⚪'}
+                                                        {status === 'completed' && <CheckSquare className="text-emerald-500 fill-emerald-500/20" size={20} />}
+                                                        {status === 'missed' && <SquareX className="text-destructive opacity-50" size={20} />}
+                                                        {status === 'pending' && <Square className="text-muted-foreground hover:text-primary transition-colors" size={20} />}
+                                                        {!status && <Square className="text-transparent" size={20} />}
                                                     </button>
                                                 );
                                             })}
@@ -342,7 +366,7 @@ export default function MyPlans() {
                                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="text-[10px] uppercase font-bold text-muted-foreground pb-2">{d}</div>)}
                                 {gridItems.map((date, i) => {
                                     const dateStr = date ? `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}` : null;
-                                    const completed = dateStr ? history[dateStr]?.filter(id => habits.some(h => h.id === id)).length : 0;
+                                    const completed = dateStr ? history[dateStr]?.filter(id => habits.some(h => String(h.id) === String(id))).length : 0;
                                     const isToday = dateStr === today;
                                     return (
                                         <div key={i} className={cn("aspect-square flex flex-col items-center justify-center rounded-lg relative", !date && "invisible", isToday && "bg-primary/20", date && "hover:bg-secondary/40")}>
@@ -416,14 +440,24 @@ export default function MyPlans() {
 
             <Modal isOpen={isHabitModalOpen} onClose={() => setIsHabitModalOpen(false)} title="Add Custom Habit to Plan">
                 <form onSubmit={handleAddHabit} className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">New Goal Item</label>
-                        <Input
-                            placeholder="e.g. Mastery Session - 1 Hour"
-                            value={newHabitName}
-                            onChange={(e) => setNewHabitName(e.target.value)}
-                            autoFocus
-                        />
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Activity Name</label>
+                            <Input
+                                placeholder="e.g. Mastery Session"
+                                value={newHabitName}
+                                onChange={(e) => setNewHabitName(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Scheduled Time (Optional)</label>
+                            <Input
+                                placeholder="e.g. 9:00 AM - 10:00 AM"
+                                value={newHabitTime}
+                                onChange={(e) => setNewHabitTime(e.target.value)}
+                            />
+                        </div>
                     </div>
                     <div className="flex justify-end gap-2 pt-4">
                         <Button type="button" variant="outline" onClick={() => setIsHabitModalOpen(false)}>Cancel</Button>
