@@ -6,64 +6,65 @@ dotenv.config();
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const SYSTEM_PROMPT = `You are "Habitica AI", an expert daily routine planner and success coach. 
+const SYSTEM_PROMPT = `You are an intelligent AI Life Optimization Agent.
 
-### YOUR GOAL
-Help the user create a personalized daily plan and a long-term roadmap.
+Your goal is to help users achieve their desired goals by understanding their routine, identifying inefficiencies, designing an optimized schedule, and providing real-world resources.
 
-### PHASE 1: QUESTIONING
-- Ask the user relevant questions one-by-one to understand their goal, schedule, constraints, and preferences.
-- ONLY ask one question at a time.
-- Usually 2-4 questions are enough before generating the plan.
+### WORKFLOW:
 
-### PHASE 2: PLAN GENERATION
-When you have sufficient information, you MUST generate a response in valid JSON format.
-The sections must be DYNAMIC based on the user's goal.
+1. INFORMATION COLLECTION: Ask structured questions to collect details like wake-up/sleep times, commitments, travel, energy peaks, skill gaps, and goal deadlines. Do NOT generate the final plan until you have sufficient details.
 
-#### REQUIRED SECTIONS:
-1. "📅 Daily Routine": A detailed time-based plan for their day.
-2. "🚀 Complete Roadmap": A step-by-step long-term roadmap to achieve their goal.
+2. ROUTINE ANALYSIS: Analyze available hours, identify time leaks, and ensure balance (sleep, activity, breaks).
 
-#### OPTIONAL SECTIONS (Add if goal is fitness/health related):
-3. "🥗 Diet & Nutrition": Specific meal guidelines.
-4. "💪 Training/Workout": Specific exercise routines.
+3. RESOURCE SEARCH: Use the available web search tools to find high-quality YouTube videos, articles, and tools. Never fabricate URLs.
 
-#### JSON STRUCTURE:
+4. PLAN GENERATION: Once all info is collected and research is done, generate a realistic, sustainable plan.
+
+### OUTPUT FORMAT:
+
+If you are still collecting information, respond with clear questions.
+If you are generating the final plan, you MUST return ONLY a valid JSON object in this format:
+
 {
-  "plan": {
-    "title": "Your [Goal Name] Plan",
-    "children": [
-      {
-        "title": "📅 Daily Routine",
-        "children": [
-          {"title": "Time - Activity 1"},
-          {"title": "Time - Activity 2"}
-        ]
-      },
-      {
-        "title": "🚀 Complete Roadmap",
-        "children": [
-          {"title": "Step 1: [Milestone Name]"},
-          {"title": "Step 2: [Milestone Name]"}
-        ]
-      }
-      // Add more sections if needed
-    ]
-  }
+  "goal_analysis": {
+    "goal": "string",
+    "deadline": "string",
+    "difficulty_level": "Low | Moderate | High",
+    "key_focus_areas": []
+  },
+  "routine_summary": {
+    "available_productive_hours": "number",
+    "identified_time_leaks": [],
+    "energy_alignment_strategy": "string"
+  },
+  "optimized_daily_schedule": [
+    {
+      "time_block": "string",
+      "activity": "string",
+      "purpose": "string"
+    }
+  ],
+  "weekly_strategy": [],
+  "mental_balance_plan": [],
+  "productivity_methods": [],
+  "recommended_resources": {
+    "youtube_videos": [{"title": "string", "url": "string", "why_recommended": "string"}],
+    "articles_or_websites": [{"title": "string", "url": "string", "why_recommended": "string"}],
+    "diet_resources": [],
+    "productivity_tools": []
+  },
+  "extra_tips": []
 }
 
 ### CRITICAL RULES:
-1. Return ONLY the JSON object when generating the plan.
-2. The Roadmap should be detailed and actionable.
-3. For resources or specific tools, use the webSearch tool (LIMIT: 3 searches per turn).
-4. Return ONLY valid JSON. No markdown explanation around it.`;
+1. Return ONLY the JSON object when providing the final plan. No markdown or explanation.
+2. If you need more information, ask before generating the plan.
+3. Use the webSearch tool whenever you need to find specific links or resources.`;
 
 async function webSearch({ query }) {
   console.log("Searching the Web for:", query);
   try {
     const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
-    // Use search with a limit of 5 total results for the agent's context 
-    // (though the prompt says 5 total searches, we keep individual search results tight)
     const response = await tvly.search(query, { maxResults: 3 });
     const mergedResponse = response?.results?.map(result => `Content: ${result.content}\nURL: ${result.url}`).join("\n\n") || "No results found.";
     console.log("Web Search completed.");
@@ -81,7 +82,7 @@ export async function generatePlan(chatMessages) {
       { role: "system", content: SYSTEM_PROMPT },
       ...chatMessages.map(m => ({
         role: m.role === 'ai' || m.role === 'bot' ? 'assistant' : 'user',
-        content: m.content
+        content: m.content || (m.data ? JSON.stringify(m.data) : ' ')
       }))
     ];
 
@@ -90,13 +91,13 @@ export async function generatePlan(chatMessages) {
         "type": "function",
         "function": {
           "name": "webSearch",
-          "description": "A function that performs web search to find relevant information.",
+          "description": "Performs a web search to find real links and resources.",
           "parameters": {
             "type": "object",
             "properties": {
               "query": {
                 "type": "string",
-                "description": "The search query string."
+                "description": "The search query."
               }
             },
             "required": ["query"]
@@ -106,40 +107,19 @@ export async function generatePlan(chatMessages) {
     ];
 
     let searchCount = 0;
-    const MAX_SEARCHES = 3; // Limit to 3 searches per turn to stay within 5 total safely
+    const MAX_SEARCHES = 3;
 
-    // Loop for tool calling (manual handling)
     let currentIteration = 0;
-    while (currentIteration < 5) { // Safety break
+    while (currentIteration < 5) {
       const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         messages: messages,
         tools: tools,
         tool_choice: "auto",
-        temperature: 0.3
+        temperature: 0.1 // Lowered temperature for more stable tool use
       });
 
       const responseMessage = completion.choices[0].message;
-
-      // If there's content and no tool calls, it's either a question or the plan
-      if (responseMessage.content && !responseMessage.tool_calls) {
-        const content = responseMessage.content.trim();
-
-        // Check if it's JSON
-        if (content.startsWith('{') || content.includes('"plan":')) {
-          try {
-            return {
-              type: 'plan',
-              data: parseJsonResponse(content)
-            };
-          } catch (e) {
-            console.error("JSON parse failed, returning as text", e);
-            return { type: 'text', content: content };
-          }
-        }
-
-        return { type: 'text', content: content };
-      }
 
       // Handle tool calls
       if (responseMessage.tool_calls) {
@@ -151,7 +131,7 @@ export async function generatePlan(chatMessages) {
               role: "tool",
               tool_call_id: toolCall.id,
               name: toolCall.function.name,
-              content: "Search limit reached. Please generate the plan with available info."
+              content: "Search limit reached. Please proceed with information you have."
             });
             continue;
           }
@@ -171,14 +151,27 @@ export async function generatePlan(chatMessages) {
           }
         }
         currentIteration++;
-      } else {
-        break;
+        continue;
       }
+
+      // If no tool calls, it's either text or the plan
+      if (responseMessage.content) {
+        const content = responseMessage.content.trim();
+
+        if (content.startsWith('{') || content.includes('"plan":') || content.includes('"goal_analysis":')) {
+          try {
+            const parsedData = parseJsonResponse(content);
+            return { type: 'plan', data: parsedData };
+          } catch (e) {
+            return { type: 'text', content: content };
+          }
+        }
+        return { type: 'text', content: content };
+      }
+      break;
     }
 
-    // Fallback
     return { type: 'text', content: "I'm ready to help. What's your next question or should I build the plan?" };
-
   } catch (error) {
     console.error("generatePlan error:", error);
     return {

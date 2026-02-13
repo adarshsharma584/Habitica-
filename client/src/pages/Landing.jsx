@@ -294,11 +294,11 @@ export default function Landing() {
                                 whileHover={{ scale: 1.02 }}
                                 className="bg-slate-900 border border-white/5 p-10 rounded-[2.5rem] relative"
                             >
-                                <div className="absolute top-[-20px] left-10">
+                                {/* <div className="absolute top-[-20px] left-10">
                                     <div className="flex gap-1 text-primary">
                                         {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
                                     </div>
-                                </div>
+                                </div> */}
                                 <p className="text-xl font-medium text-slate-200 leading-relaxed mb-8 italic">"{item.quote}"</p>
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-full bg-slate-800 border border-white/10" />
@@ -353,7 +353,7 @@ export default function Landing() {
             </section>
 
             {/* Footer */}
-            <footer className="py-20 border-t border-white/5">
+            {/* <footer className="py-20 border-t border-white/5">
                 <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="flex items-center gap-2">
                         <div className="p-2 rounded-lg bg-primary">
@@ -369,7 +369,7 @@ export default function Landing() {
                     </div>
                     <p className="text-xs text-slate-600 font-medium">© 2026 Habitica Consistency Engine. All rights reserved.</p>
                 </div>
-            </footer>
+            </footer> */}
         </div>
     );
 }

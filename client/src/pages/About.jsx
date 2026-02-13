@@ -225,7 +225,7 @@ export default function About() {
             </section>
 
             {/* Footer */}
-            <footer className="py-20 border-t border-white/5">
+            {/* <footer className="py-20 border-t border-white/5">
                 <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="flex items-center gap-2">
                         <div className="p-2 rounded-lg bg-primary">
@@ -241,7 +241,7 @@ export default function About() {
                     </div>
                     <p className="text-xs text-slate-600 font-medium">© 2026 Habitica Consistency Engine. All rights reserved.</p>
                 </div>
-            </footer>
+            </footer> */}
         </div>
     );
 }
