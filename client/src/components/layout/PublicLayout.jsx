@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Outlet, Link } from 'react-router-dom';
 import { Button } from '../ui/button';
-import { Sparkles, Menu, X, ArrowRight } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PublicLayout() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { isAuthenticated } = useSelector((state) => state.auth);
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
@@ -26,11 +28,20 @@ export default function PublicLayout() {
                         <Link to="/about" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">About</Link>
                         <Link to="/pricing" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Pricing</Link>
                         <Link to="/contact" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Contact</Link>
-                        <Link to="/signup">
-                            <Button className="rounded-full px-6 font-semibold bg-white text-black hover:bg-gray-200">
-                                Get Started
-                            </Button>
-                        </Link>
+                        {isAuthenticated ? (
+                            <Link to="/profile">
+                                <Button className="rounded-full px-6 font-semibold bg-primary text-white hover:bg-primary/90 flex items-center gap-2">
+                                    <User size={16} />
+                                    Profile
+                                </Button>
+                            </Link>
+                        ) : (
+                            <Link to="/signup">
+                                <Button className="rounded-full px-6 font-semibold bg-white text-black hover:bg-gray-200">
+                                    Get Started
+                                </Button>
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}
@@ -55,9 +66,18 @@ export default function PublicLayout() {
                                 <Link to="/about" className="text-lg font-medium p-2 hover:bg-white/5 rounded-lg text-gray-300">About</Link>
                                 <Link to="/pricing" className="text-lg font-medium p-2 hover:bg-white/5 rounded-lg text-gray-300">Pricing</Link>
                                 <Link to="/contact" className="text-lg font-medium p-2 hover:bg-white/5 rounded-lg text-gray-300">Contact</Link>
-                                <Link to="/dashboard">
-                                    <Button className="w-full mt-4 rounded-xl" size="lg">Launch App</Button>
-                                </Link>
+                                {isAuthenticated ? (
+                                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
+                                        <Button className="w-full mt-4 rounded-xl flex items-center justify-center gap-2" size="lg">
+                                            <User size={20} />
+                                            Profile
+                                        </Button>
+                                    </Link>
+                                ) : (
+                                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                                        <Button className="w-full mt-4 rounded-xl" size="lg">Get Started</Button>
+                                    </Link>
+                                )}
                             </div>
                         </motion.div>
                     )}

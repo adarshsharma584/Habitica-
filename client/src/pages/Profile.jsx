@@ -3,15 +3,27 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
-import { User, Mail, Calendar, Target, TrendingUp, LogOut, Shield, Bell } from 'lucide-react';
+import { User, Mail, Calendar, Target, TrendingUp, LogOut, Shield, Bell, Layout as LayoutIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { logout } from '../store/authSlice';
+import { fetchPlans } from '../store/plansSlice';
 
 export default function Profile() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
+    const { plans, loading: plansLoading } = useSelector((state) => state.plans);
     const { habits, history } = useSelector((state) => state.habits);
+
+    React.useEffect(() => {
+        if (plans.length === 0 && !plansLoading) {
+            dispatch(fetchPlans());
+        }
+    }, [dispatch, plans.length, plansLoading]);
+
+    const isPro = user?.is_pro || false;
+    const planLimit = isPro ? 'Unlimited' : 3;
+    const planUsage = plans.length;
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -68,7 +80,7 @@ export default function Profile() {
             </Card>
 
             {/* Stats Grid */}
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="border-border/50">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-3">
@@ -78,6 +90,23 @@ export default function Profile() {
                             <div>
                                 <p className="text-2xl font-bold">{totalHabits}</p>
                                 <p className="text-sm text-muted-foreground">Total Habits</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-border/50">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-lg bg-amber-500/10">
+                                <LayoutIcon className="text-amber-500" size={24} />
+                            </div>
+                            <div>
+                                <div className="flex items-baseline gap-1">
+                                    <p className="text-2xl font-bold">{planUsage}</p>
+                                    <p className="text-sm text-muted-foreground font-medium">/ {planLimit}</p>
+                                </div>
+                                <p className="text-sm text-muted-foreground">Active Plans</p>
                             </div>
                         </div>
                     </CardContent>
@@ -154,6 +183,6 @@ export default function Profile() {
                     </Button>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }

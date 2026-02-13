@@ -8,13 +8,19 @@ import { Sparkles, Send, User, Bot, Download, Layout } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PlanGraph from '../components/PlanGraph';
 import OptimizationPlan from '../components/OptimizationPlan';
-import { createPlan } from '../store/plansSlice';
+import { fetchPlans, createPlan } from '../store/plansSlice';
 import { addHabit } from '../store/habitsSlice';
+import { AlertCircle, Lock } from 'lucide-react';
 
 export default function AIPlanner() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
+    const { plans, loading: plansLoading } = useSelector((state) => state.plans);
+
+    // Pro status logic (can be extended with actual subscription field)
+    const isPro = user?.is_pro || false;
+    const isPlanLimitReached = !isPro && plans.length >= 3;
     // ... roles ...
     const [messages, setMessages] = useState([
         {
@@ -31,6 +37,12 @@ export default function AIPlanner() {
     const [showPersonaOverlay, setShowPersonaOverlay] = useState(true);
     const [questionAnswers, setQuestionAnswers] = useState({});
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (plans.length === 0 && !plansLoading) {
+            dispatch(fetchPlans());
+        }
+    }, [dispatch, plans.length, plansLoading]);
 
     const parseQuestions = (text) => {
         if (!text) return [];
@@ -142,6 +154,7 @@ export default function AIPlanner() {
     }, [messages, isTyping]);
 
     const handleSend = async () => {
+        if (isPlanLimitReached) return;
         const isForm = currentQuestions.length > 0;
         let finalContent = '';
 
@@ -252,44 +265,75 @@ export default function AIPlanner() {
                         className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl"
                     >
                         <Card className="max-w-xl w-full bg-slate-900/50 border-white/10 p-8 sm:p-12 shadow-2xl h-[calc(100vh-50px)] relative overflow-hidden text-center space-y-8 overflow-y-scroll  [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            <div className="space-y-4">
-                                {/* <div className="inline-flex p-3 rounded-2xl bg-primary/10 text-primary mb-2">
-                                    <Sparkles size={32} />
-                                </div> */}
-                                <h2 className="text-3xl font-black text-white tracking-tight">Who are we building for?</h2>
-                                <p className="text-slate-400 text-lg">Select up to two roles to help me architect your routine.</p>
-                            </div>
+                            {isPlanLimitReached ? (
+                                <div className="space-y-8 py-10 animate-in fade-in zoom-in duration-500">
+                                    <div className="flex justify-center">
+                                        <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-2xl shadow-primary/20">
+                                            <Lock size={40} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h2 className="text-3xl font-black text-white tracking-tight leading-tight">Plan Limit Reached</h2>
+                                        <p className="text-slate-400 text-lg leading-relaxed">
+                                            The Starter plan allows for <strong className="text-white">3 AI-Architected plans</strong>.
+                                            Upgrade to Pro for unlimited optimization or delete an existing plan to continue.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-4 pt-6">
+                                        <Button
+                                            onClick={() => navigate('/pricing')}
+                                            className="w-full h-14 text-lg font-black bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30"
+                                        >
+                                            Upgrade to Pro
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => navigate('/my-plans')}
+                                            className="w-full h-14 text-lg font-bold text-slate-400 hover:text-white hover:bg-white/5"
+                                        >
+                                            Manage Existing Plans
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-4 text-center">
+                                        <h2 className="text-3xl font-black text-white tracking-tight">Who are we building for?</h2>
+                                        <p className="text-slate-400 text-lg">Select up to two roles to help me architect your routine.</p>
+                                    </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                {personaOptions.map((persona) => (
-                                    <button
-                                        key={persona.id}
-                                        onClick={() => togglePersona(persona.label)}
-                                        className={`p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-3 ${selectedPersonas.includes(persona.label)
-                                            ? 'bg-primary/20 border-primary text-white shadow-lg shadow-primary/20'
-                                            : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20'
-                                            }`}
-                                    >
-                                        <span className="text-3xl">{persona.icon}</span>
-                                        <span className="font-bold text-sm tracking-wide">{persona.label}</span>
-                                    </button>
-                                ))}
-                            </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {personaOptions.map((persona) => (
+                                            <button
+                                                key={persona.id}
+                                                onClick={() => togglePersona(persona.label)}
+                                                className={`p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center gap-3 ${selectedPersonas.includes(persona.label)
+                                                    ? 'bg-primary/20 border-primary text-white shadow-lg shadow-primary/20'
+                                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20'
+                                                    }`}
+                                            >
+                                                <span className="text-3xl">{persona.icon}</span>
+                                                <span className="font-bold text-sm tracking-wide">{persona.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
 
-                            <div className="pt-4">
-                                <Button
-                                    onClick={handleStartArchitecting}
-                                    disabled={selectedPersonas.length === 0}
-                                    className="w-full h-14 text-lg font-black bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-transform active:scale-95 disabled:opacity-50"
-                                >
-                                    Start Architecting Routine
-                                </Button>
-                                <p className="mt-4 text-xs text-slate-500 font-medium italic">
-                                    {selectedPersonas.length > 0
-                                        ? `Selected: ${selectedPersonas.join(' & ')}`
-                                        : 'Please select at least one role to continue'}
-                                </p>
-                            </div>
+                                    <div className="pt-4">
+                                        <Button
+                                            onClick={handleStartArchitecting}
+                                            disabled={selectedPersonas.length === 0}
+                                            className="w-full h-14 text-lg font-black bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-transform active:scale-95 disabled:opacity-50"
+                                        >
+                                            Start Architecting Routine
+                                        </Button>
+                                        <p className="mt-4 text-xs text-slate-500 font-medium italic">
+                                            {selectedPersonas.length > 0
+                                                ? `Selected: ${selectedPersonas.join(' & ')}`
+                                                : 'Please select at least one role to continue'}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </Card>
                     </motion.div>
                 )}

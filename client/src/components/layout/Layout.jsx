@@ -147,6 +147,16 @@ export default function Layout() {
                             )}
                         </button>
 
+                        <Link
+                            to="/profile"
+                            className={cn(
+                                "p-2 rounded-lg transition-all",
+                                location.pathname === "/profile" ? "bg-primary/10 text-primary" : "hover:bg-secondary/50 text-muted-foreground"
+                            )}
+                        >
+                            <User size={20} />
+                        </Link>
+
                         <AnimatePresence>
                             {isNotificationsOpen && (
                                 <motion.div

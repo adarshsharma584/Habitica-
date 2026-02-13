@@ -13,12 +13,12 @@ export default function Pricing() {
             description: "No more excuses. Start building consistency today.",
             features: [
                 "Track up to 3 habits",
+                "Up to 3 AI-Architected plans",
                 "Basic analytics",
-                "7-day history",
-                "Manual routine planning"
+                "7-day history"
             ],
             notIncluded: [
-                "AI Routine Architect",
+                "Unlimited AI Plans",
                 "Unlimited history",
                 "Advanced charts"
             ],
@@ -33,6 +33,7 @@ export default function Pricing() {
             description: "For those obsessed with optimization.",
             features: [
                 "Unlimited habits",
+                "Unlimited AI-Architected plans",
                 "AI Routine Architect (GPT-4o)",
                 "Full analytics suite",
                 "Unlimited history",
